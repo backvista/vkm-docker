@@ -8,40 +8,39 @@ APP_DIR="/var/www/html"
 # Лежит внутри vendor-тома, чтобы переживать перезапуски контейнера
 CHECKSUM_FILE="$VENDOR_DIR/.composer_checksum"
 
-# Кастомные vendor-пакеты, которые НЕ установлены через composer
-# Эти пакеты размещены в репозитории вручную и прописаны в autoload через PSR-4
-CUSTOM_VENDOR_PACKAGES=(
-    "simple-qrcode"
-    "bacon-qrcode"
-    "enum"
-    "laravel-snappy"
-    "snappy"
-)
+# --- Функция: настройка Composer на работу через корпоративный Nexus ---
+# Вносит конфигурацию напрямую в проектный composer.json (внутри контейнера),
+# потому что глобальный конфиг ($COMPOSER_HOME/config.json) не всегда подхватывается.
+# Отключает публичный packagist.org и направляет все запросы через Nexus-зеркало.
+configure_composer_nexus() {
+    echo "[entrypoint] Настраиваю Composer на работу через Nexus..."
+    cd "$APP_DIR"
 
-# --- Функция: восстановление кастомных vendor-пакетов ---
-# Копирует пакеты из _vendor_custom/ в vendor/, если они отсутствуют
-restore_custom_packages() {
-    for pkg in "${CUSTOM_VENDOR_PACKAGES[@]}"; do
-        if [ ! -d "$VENDOR_DIR/$pkg" ] && [ -d "$APP_DIR/_vendor_custom/$pkg" ]; then
-            echo "[entrypoint] Восстанавливаю кастомный vendor-пакет: $pkg"
-            cp -r "$APP_DIR/_vendor_custom/$pkg" "$VENDOR_DIR/$pkg"
-        fi
-    done
+    # Отключаем packagist.org — без этого Composer будет обращаться к нему напрямую
+    composer config repositories.packagist.org false 2>/dev/null || true
+
+    # Добавляем Nexus как единственный источник пакетов
+    composer config repositories.nexus composer "https://nexus.fc.uralsibbank.ru/repository/packagist-org/" 2>/dev/null || true
 }
 
-# --- Функция: запуск composer install ---
+# --- Функция: установка/обновление зависимостей через Composer ---
+# Используем composer update вместо composer install, потому что:
+# composer.lock содержит захардкоженные dist URL на github.com/api.github.com,
+# а composer install скачивает пакеты именно по этим URL, игнорируя настроенный репозиторий.
+# composer update резолвит пакеты заново через Nexus-зеркало
+# и генерирует актуальный composer.lock с правильными URL.
 run_composer_install() {
-    echo "[entrypoint] Запускаю composer install..."
+    echo "[entrypoint] Запускаю composer update..."
 
-    # Сначала восстанавливаем кастомные пакеты (они нужны для autoload)
-    restore_custom_packages
+    # Настраиваем Nexus перед установкой зависимостей
+    configure_composer_nexus
 
-    composer install --no-interaction --prefer-dist --optimize-autoloader
+    composer update --no-interaction --prefer-dist --optimize-autoloader
 
     # Сохраняем контрольную сумму после успешной установки
     save_checksum
 
-    echo "[entrypoint] composer install завершён."
+    echo "[entrypoint] composer update завершён."
 }
 
 # --- Функция: вычисление контрольной суммы composer-файлов ---
@@ -103,9 +102,8 @@ elif composer_files_changed; then
     echo "[entrypoint] Обнаружены изменения в composer.json/composer.lock — переустановка зависимостей."
     run_composer_install
 else
-    # Случай 3: зависимости актуальны — только проверяем кастомные пакеты
+    # Случай 3: зависимости актуальны — пропускаем
     echo "[entrypoint] Composer актуален, пропускаю composer install."
-    restore_custom_packages
 fi
 
 # Установка прав доступа для директорий Laravel storage и cache

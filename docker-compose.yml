@@ -32,6 +32,14 @@ services:
       - ./:/var/www/html
       # Отдельный том для vendor (общий с nginx для доступа к assets)
       - vendor_data:/var/www/html/vendor
+      # Кастомные vendor-пакеты, размещённые вручную (не через composer).
+      # Именованный том vendor_data перекрывает весь vendor/, поэтому эти пакеты
+      # пробрасываются отдельными bind mount поверх тома (более специфичный путь побеждает).
+      - ./vendor/simple-qrcode:/var/www/html/vendor/simple-qrcode:ro
+      - ./vendor/bacon-qrcode:/var/www/html/vendor/bacon-qrcode:ro
+      - ./vendor/enum:/var/www/html/vendor/enum:ro
+      - ./vendor/laravel-snappy:/var/www/html/vendor/laravel-snappy:ro
+      - ./vendor/snappy:/var/www/html/vendor/snappy:ro
     depends_on:
       - mysql
     networks:

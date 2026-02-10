@@ -1,0 +1,8 @@
+.idea/
+.git/
+vendor/
+node_modules/
+storage/logs/*
+.env
+.env.backup
+docker-compose.override.yml

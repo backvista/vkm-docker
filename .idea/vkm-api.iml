@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/app" isTestSource="false" packagePrefix="App\" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/laravel-qr-code/src" isTestSource="false" packagePrefix="LaravelQRCode\" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/qr-code/src/QR_Code" isTestSource="false" packagePrefix="QR_Code\" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" packagePrefix="Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/vendor//snappy/src/Knp/Snappy" isTestSource="false" packagePrefix="Knp\Snappy\" />
+      <sourceFolder url="file://$MODULE_DIR$/vendor/bacon-qrcode/src" isTestSource="false" packagePrefix="BaconQrCode\" />
+      <sourceFolder url="file://$MODULE_DIR$/vendor/enum/src" isTestSource="false" packagePrefix="DASPRiD\Enum\" />
+      <sourceFolder url="file://$MODULE_DIR$/vendor/laravel-snappy/src" isTestSource="false" packagePrefix="Barryvdh\Snappy\" />
+      <sourceFolder url="file://$MODULE_DIR$/vendor/simple-qrcode/src" isTestSource="false" packagePrefix="SimpleSoftwareIO\QrCode\" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

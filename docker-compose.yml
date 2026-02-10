@@ -1,11 +1,10 @@
 # Docker Compose конфигурация для проекта vkm-api
 # Стек: Nginx + PHP-FPM 7.3 + MariaDB 10.3
-version: "3.8"
 
 services:
   # Веб-сервер Nginx — обратный прокси к php-fpm
   nginx:
-    image: nginx:stable-alpine
+    image: nexus.fc.uralsibbank.ru/dockerhub/nginx:stable-alpine
     ports:
       # Внешний порт приложения (по умолчанию 8080)
       - "${APP_PORT:-8080}:80"
@@ -62,7 +61,7 @@ services:
 
   # MariaDB 10.3 — сервер базы данных
   mysql:
-    image: mariadb:10.3
+    image: nexus.fc.uralsibbank.ru/dockerhub/mariadb:10.3
     ports:
       # Внешний порт для подключения к БД из хост-системы (например, через DBeaver)
       - "${DB_EXTERNAL_PORT:-3306}:3306"

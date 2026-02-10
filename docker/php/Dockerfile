@@ -1,6 +1,6 @@
 # Базовый образ PHP 7.3 с FPM (последний патч 7.3.33)
 # Основан на Debian 11 (Bullseye)
-FROM php:7.3.33-fpm
+FROM nexus.fc.uralsibbank.ru/dockerhub/php:7.3.33-fpm
 
 # === Корпоративный контур: сертификат и зеркало репозиториев ===
 
@@ -70,7 +70,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # === Composer ===
 
 # Установка Composer v2 (мультистейдж-копирование из официального образа)
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=nexus.fc.uralsibbank.ru/dockerhub/composer:2 /usr/bin/composer /usr/bin/composer
 
 # Глобальная конфигурация Composer для работы через корпоративный Nexus
 # Отключает публичный packagist.org и направляет все запросы через внутреннее зеркало

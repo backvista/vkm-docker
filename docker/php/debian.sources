@@ -1,6 +1,6 @@
 # Корпоративное зеркало Debian через Nexus (вместо публичных репозиториев)
-# Suites: buster / buster-updates — соответствуют базовому образу php:7.3-fpm (Debian 10)
+# Suites: bullseye / bullseye-updates — соответствуют базовому образу php:7.3.33-fpm (Debian 11)
 Types: deb
 URIs: https://nexus.fc.uralsibbank.ru/repository/mirror.yandex.ru_debian/
-Suites: buster buster-updates
+Suites: bullseye bullseye-updates
 Components: main

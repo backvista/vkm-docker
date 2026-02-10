@@ -8,21 +8,6 @@ APP_DIR="/var/www/html"
 # Лежит внутри vendor-тома, чтобы переживать перезапуски контейнера
 CHECKSUM_FILE="$VENDOR_DIR/.composer_checksum"
 
-# --- Функция: настройка Composer на работу через корпоративный Nexus ---
-# Вносит конфигурацию напрямую в проектный composer.json (внутри контейнера),
-# потому что глобальный конфиг ($COMPOSER_HOME/config.json) не всегда подхватывается.
-# Отключает публичный packagist.org и направляет все запросы через Nexus-зеркало.
-configure_composer_nexus() {
-    echo "[entrypoint] Настраиваю Composer на работу через Nexus..."
-    cd "$APP_DIR"
-
-    # Отключаем packagist.org — без этого Composer будет обращаться к нему напрямую
-    composer config repositories.packagist.org false 2>/dev/null || true
-
-    # Добавляем Nexus как единственный источник пакетов
-    composer config repositories.nexus composer "https://nexus.fc.uralsibbank.ru/repository/packagist-org/" 2>/dev/null || true
-}
-
 # --- Функция: установка/обновление зависимостей через Composer ---
 # Используем composer update вместо composer install, потому что:
 # composer.lock содержит захардкоженные dist URL на github.com/api.github.com,
@@ -32,10 +17,14 @@ configure_composer_nexus() {
 run_composer_install() {
     echo "[entrypoint] Запускаю composer update..."
 
-    # Настраиваем Nexus перед установкой зависимостей
-    configure_composer_nexus
+    # --no-scripts: пропускаем post-autoload-dump хуки (php artisan package:discover),
+    # потому что Laravel при discover загружает ВСЕ Artisan-команды, а некоторые из них
+    # (например CalculateHandleLoad) обращаются к БД в конструкторе.
+    # На этом этапе таблиц ещё может не быть — миграции запустятся ниже.
+    composer update --no-scripts --no-interaction --prefer-dist --optimize-autoloader
 
-    composer update --no-interaction --prefer-dist --optimize-autoloader
+    # Генерируем autoload без запуска скриптов
+    composer dump-autoload --optimize --no-scripts
 
     # Сохраняем контрольную сумму после успешной установки
     save_checksum
@@ -110,6 +99,17 @@ fi
 # www-data — пользователь, от имени которого работает php-fpm
 chown -R www-data:www-data "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" 2>/dev/null || true
 chmod -R 775 "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" 2>/dev/null || true
+
+# Миграции БД — создаём таблицы перед запуском приложения
+# --force: обязателен для не-local окружений (Laravel блокирует миграции без него)
+echo "[entrypoint] Запускаю миграции БД..."
+cd "$APP_DIR"
+php artisan migrate --force 2>/dev/null || echo "[entrypoint] ВНИМАНИЕ: миграции завершились с ошибкой (возможно БД ещё не готова)"
+
+# package:discover — регистрация сервис-провайдеров пакетов
+# Запускаем ПОСЛЕ миграций, т.к. некоторые Artisan-команды обращаются к БД в конструкторе
+echo "[entrypoint] Запускаю package:discover..."
+php artisan package:discover --ansi 2>/dev/null || echo "[entrypoint] ВНИМАНИЕ: package:discover завершился с ошибкой"
 
 echo "[entrypoint] Запускаю php-fpm..."
 exec php-fpm

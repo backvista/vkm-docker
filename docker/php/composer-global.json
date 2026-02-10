@@ -1,0 +1,17 @@
+{
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://nexus.fc.uralsibbank.ru/repository/packagist-org/",
+            "options": {
+                "ssl": {
+                    "verify_peer": false,
+                    "allow_self_signed": true
+                }
+            }
+        },
+        {
+            "packagist.org": false
+        }
+    ]
+}

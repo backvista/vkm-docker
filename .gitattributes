@@ -1,0 +1,22 @@
+# Принудительный LF для всех файлов, исполняемых в Linux-контейнерах
+# Защита от CRLF при работе на Windows + WSL2
+
+# Shell-скрипты — критично, CRLF ломает shebang (#!/bin/bash\r → "bad interpreter")
+*.sh        text eol=lf
+
+# Docker-файлы
+Dockerfile  text eol=lf
+*.dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+.dockerignore text eol=lf
+
+# Конфигурации, используемые внутри контейнеров
+*.conf      text eol=lf
+*.sources   text eol=lf
+*.cnf       text eol=lf
+
+# PHP — исполняется в Linux-контейнере
+*.php       text eol=lf
+
+# Сертификаты — бинарный формат, без конвертации
+*.pem       binary

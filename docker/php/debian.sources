@@ -1,0 +1,6 @@
+# Корпоративное зеркало Debian через Nexus (вместо публичных репозиториев)
+# Suites: buster / buster-updates — соответствуют базовому образу php:7.3-fpm (Debian 10)
+Types: deb
+URIs: https://nexus.fc.uralsibbank.ru/repository/mirror.yandex.ru_debian/
+Suites: buster buster-updates
+Components: main

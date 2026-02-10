@@ -1,13 +1,20 @@
+# Docker Compose конфигурация для проекта vkm-api
+# Стек: Nginx + PHP-FPM 7.3 + MariaDB 10.3
 version: "3.8"
 
 services:
+  # Веб-сервер Nginx — обратный прокси к php-fpm
   nginx:
     image: nginx:stable-alpine
     ports:
+      # Внешний порт приложения (по умолчанию 8080)
       - "${APP_PORT:-8080}:80"
     volumes:
+      # Код приложения
       - ./:/var/www/html
+      # Отдельный том для vendor — чтобы composer install не конфликтовал с bind mount
       - vendor_data:/var/www/html/vendor
+      # Конфигурация Nginx (только чтение)
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - php-fpm
@@ -15,21 +22,28 @@ services:
       - vkm-network
     restart: unless-stopped
 
+  # PHP-FPM 7.3 — обработка PHP-запросов
   php-fpm:
     build:
+      # Dockerfile расположен в docker/php/
       context: ./docker/php
     volumes:
+      # Код приложения
       - ./:/var/www/html
+      # Отдельный том для vendor (общий с nginx для доступа к assets)
       - vendor_data:/var/www/html/vendor
     depends_on:
       - mysql
     networks:
       - vkm-network
     environment:
+      # Настройки Laravel-приложения
       - APP_ENV=${APP_ENV:-local}
       - APP_DEBUG=${APP_DEBUG:-true}
       - APP_KEY=${APP_KEY}
       - APP_URL=${APP_URL:-http://localhost:8080}
+      # Настройки подключения к базе данных
+      # DB_HOST=mysql — имя сервиса в docker-compose (внутренний DNS)
       - DB_CONNECTION=${DB_CONNECTION:-mysql}
       - DB_HOST=mysql
       - DB_PORT=3306
@@ -38,27 +52,36 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-secret}
     restart: unless-stopped
 
+  # MariaDB 10.3 — сервер базы данных
   mysql:
     image: mariadb:10.3
     ports:
+      # Внешний порт для подключения к БД из хост-системы (например, через DBeaver)
       - "${DB_EXTERNAL_PORT:-3306}:3306"
     environment:
+      # Пароль root-пользователя MariaDB
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      # База данных, пользователь и пароль создаются автоматически при первом запуске
       MYSQL_DATABASE: ${DB_DATABASE:-vkm}
       MYSQL_USER: ${DB_USERNAME:-vkm}
       MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
     volumes:
+      # Персистентный том для данных БД (сохраняется между перезапусками)
       - mysql_data:/var/lib/mysql
     networks:
       - vkm-network
     restart: unless-stopped
 
+# Именованные тома
 volumes:
+  # Том для composer-зависимостей (избегает конфликта bind mount и node_modules/vendor)
   vendor_data:
     driver: local
+  # Том для данных MariaDB (персистентное хранилище)
   mysql_data:
     driver: local
 
+# Внутренняя сеть для связи между контейнерами
 networks:
   vkm-network:
     driver: bridge
